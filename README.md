@@ -6,8 +6,8 @@ This Package Fork from https://github.com/zefy/laravel-sso to modify some change
 
 This package based on [Simple PHP SSO skeleton](https://github.com/zefy/php-simple-sso) package and made suitable for Laravel framework.
 ### Requirements
-* Laravel 5.5+
-* PHP 7.1+
+* Laravel 8+
+* PHP 7.4+
 
 ### Words meanings
 * ***SSO*** - Single Sign-On.
