@@ -22,7 +22,7 @@ Client visits Broker and unique token is generated. When new token is generated 
 ### Server
 Install this package using composer.
 ```shell
-$ composer require zefy/laravel-sso
+$ composer require mi-lopez/laravel-sso
 ```
 
 
@@ -59,7 +59,7 @@ $ php artisan sso:broker:create {name}
 ### Broker
 Install this package using composer.
 ```shell
-$ composer require zefy/laravel-sso
+$ composer require mi-lopez/laravel-sso
 ```
 
 
