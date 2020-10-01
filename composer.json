@@ -1,8 +1,8 @@
 {
-    "name": "zefy/laravel-sso",
+    "name": "mi-lopez/laravel-sso",
     "description": "Simple PHP SSO integration for Laravel",
     "keywords": ["laravel", "sso", "authentication", "login"],
-    "homepage": "https://github.com/zefy/laravel-sso",
+    "homepage": "https://github.com/mi-lopez/laravel-sso",
     "license": "MIT",
     "authors": [
       {
@@ -10,12 +10,22 @@
         "email": "m.zaliaduonis@gmail.com",
         "homepage": "https://github.com/zefy",
         "role": "Developer"
+      }, {
+          "name": "Kunwar Chandra Pal",
+          "email": "raja.kcpal@gmail.com",
+          "homepage": "https://github.com/kcpal",
+          "role": "Developer"
+      }, {
+          "name": "Miguel López",
+          "email": "miguel.lopezt86@gmail.com",
+          "homepage": "https://github.com/mi-lopez",
+          "role": "Developer"
       }
     ],
     "require": {
-        "php": ">=7.1.3",
+        "php": "^7.4",
         "guzzlehttp/guzzle": "^6.3",
-        "laravel/framework": "^7.24",
+        "laravel/framework": "^8.0",
         "zefy/php-simple-sso": "^1.0"
     },
     "autoload": {
