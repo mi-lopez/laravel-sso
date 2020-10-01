@@ -23,7 +23,7 @@ return [
      |
      */
 
-    'usersModel' => \App\User::class,
+    'usersModel' => \App\Models\User::class,
     'brokersModel' => Zefy\LaravelSSO\Models\Broker::class,
     'brokersUserModel' => Zefy\LaravelSSO\Models\BrokerUser::class,
 
