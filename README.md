@@ -47,6 +47,15 @@ This is necessary because we need sessions to work in API routes and throttle mi
 ],
 ```
 
+```php
+ protected $routeMiddleware = [
+     ...
+     'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+     'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+     ...
+ ];
+```
+
 
 Now you should create brokers.
 You can create new broker using following Artisan CLI command:
@@ -72,7 +81,7 @@ $ php artisan vendor:publish --provider="Zefy\LaravelSSO\SSOServiceProvider"
 Change `type` value in `config/laravel-sso.php` file from `server`
  to `broker`.
 
- 
+
 
 Set 3 new options in your `.env` file:
 ```shell
@@ -105,7 +114,7 @@ Last but not least, you need to edit `app/Http/Controllers/Auth/LoginController.
 protected function attemptLogin(Request $request)
 {
     $broker = new \Zefy\LaravelSSO\LaravelSSOBroker;
-    
+
     $credentials = $this->credentials($request);
     return $broker->login($credentials[$this->username()], $credentials['password']);
 }
@@ -113,13 +122,13 @@ protected function attemptLogin(Request $request)
 public function logout(Request $request)
 {
     $broker = new \Zefy\LaravelSSO\LaravelSSOBroker;
-    
+
     $broker->logout();
-    
+
     $this->guard()->logout();
-    
+
     $request->session()->invalidate();
-    
+
     return redirect('/');
 }
 ```
