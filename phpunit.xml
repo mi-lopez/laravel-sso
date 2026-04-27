@@ -12,6 +12,15 @@
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
+    <!--
+        Defaults below match a vanilla PostgreSQL install (and the GitHub Actions
+        service container). Override locally by exporting env vars before running
+        Pest, e.g.:
+
+            DB_PORT=5432 DB_USERNAME=myuser DB_PASSWORD=secret vendor/bin/pest
+
+        See .env.example for the full list of variables you can override.
+    -->
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="DB_CONNECTION" value="pgsql"/>
