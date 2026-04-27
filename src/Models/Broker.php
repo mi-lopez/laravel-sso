@@ -6,12 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Broker extends Model
 {
-    /**
-     * Get the table associated with the model.
-     *
-     * @return string
-     */
-    public function getTable()
+    protected $fillable = ['name', 'secret'];
+
+    public function getTable(): string
     {
         return config('laravel-sso.brokersTable', 'brokers');
     }

@@ -7,46 +7,22 @@ use Illuminate\Support\Str;
 
 class CreateBroker extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'sso:broker:create {name}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Creating new SSO broker.';
+    protected $description = 'Create a new SSO broker.';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function handle(): int
     {
-        parent::__construct();
-    }
+        $brokerClass = config('laravel-sso.brokersModel');
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
-    {
-        $brokerClass = app(config('laravel-sso.brokersModel'));
-        $broker = new $brokerClass;
+        $broker = $brokerClass::create([
+            'name' => $this->argument('name'),
+            'secret' => Str::random(40),
+        ]);
 
-        $broker->name = $this->argument('name');
-        $broker->secret = Str::random(40);
+        $this->info('Broker `'.$broker->name.'` created successfully.');
+        $this->line('Secret: '.$broker->secret);
 
-        $broker->save();
-
-        $this->info('Broker with name `' . $this->argument('name') . '` successfully created.');
-        $this->info('Secret: ' . $broker->secret);
+        return self::SUCCESS;
     }
 }

@@ -8,12 +8,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class BrokerUser extends Model
 {
     use SoftDeletes;
-    /**
-    * Get the table associated with the model.
-    *
-    * @return string
-    */
-    public function getTable()
+
+    protected $fillable = ['user_id', 'broker_id'];
+
+    public function getTable(): string
     {
         return config('laravel-sso.brokerUserTable', 'broker_user');
     }

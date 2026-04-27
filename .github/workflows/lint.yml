@@ -1,0 +1,29 @@
+name: Lint
+
+on:
+  push:
+    branches: ["11.x", "master"]
+  pull_request:
+    branches: ["11.x"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    name: PHP Pint
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Run Pint
+        run: vendor/bin/pint --test

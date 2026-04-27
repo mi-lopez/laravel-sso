@@ -1,147 +1,261 @@
-# Simple PHP SSO integration for Laravel
+# Laravel SSO
 
-<p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
+[![Tests](https://github.com/mi-lopez/laravel-sso/actions/workflows/tests.yml/badge.svg)](https://github.com/mi-lopez/laravel-sso/actions/workflows/tests.yml)
+[![Lint](https://github.com/mi-lopez/laravel-sso/actions/workflows/lint.yml/badge.svg)](https://github.com/mi-lopez/laravel-sso/actions/workflows/lint.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/mi-lopez/laravel-sso.svg)](https://packagist.org/packages/mi-lopez/laravel-sso)
+[![Total Downloads](https://img.shields.io/packagist/dt/mi-lopez/laravel-sso.svg)](https://packagist.org/packages/mi-lopez/laravel-sso)
+[![License](https://img.shields.io/packagist/l/mi-lopez/laravel-sso.svg)](LICENSE.md)
 
-This Package Fork from https://github.com/zefy/laravel-sso to modify some change
+Single Sign-On (SSO) integration for Laravel. One central server authenticates users; multiple broker apps share that login session. Based on [zefy/php-simple-sso](https://github.com/zefy/php-simple-sso).
 
-This package based on [Simple PHP SSO skeleton](https://github.com/zefy/php-simple-sso) package and made suitable for Laravel framework.
-### Requirements
-* Laravel 8+
-* PHP 7.4+
+## Version Compatibility
 
-### Words meanings
-* ***SSO*** - Single Sign-On.
-* ***Server*** - page which works as SSO server, handles authentications, stores all sessions data.
-* ***Broker*** - your page which is used visited by clients/users.
-* ***Client/User*** - your every visitor.
+| Package | Laravel | PHP    | Branch                                                  |
+|---------|---------|--------|---------------------------------------------------------|
+| 8.x     | 8.x     | 7.4+   | [8.x](https://github.com/mi-lopez/laravel-sso/tree/8.x) |
+| 11.x    | 11.x    | 8.2+   | [11.x](https://github.com/mi-lopez/laravel-sso/tree/11.x) |
 
-### How it works?
-Client visits Broker and unique token is generated. When new token is generated we need to attach Client session to his session in Broker so he will be redirected to Server and back to Broker at this moment new session in Server will be created and associated with Client session in Broker's page. When Client visits other Broker same steps will be done except that when Client will be redirected to Server he already use his old session and same session id which associated with Broker#1.
+## Concepts
 
-# Installation
-### Server
-Install this package using composer.
-```shell
-$ composer require mi-lopez/laravel-sso
+- **Server** — the central authentication app. Stores credentials and issues sessions.
+- **Broker** — a downstream app that delegates login to the server.
+- **Token** — a per-broker, per-user value stored in a cookie that links the broker to a server session.
+
+## How it works
+
+1. A user visits a broker. The broker generates a random token and asks the server to attach it to the user's server session.
+2. When the user submits credentials, the broker forwards them to the server. On success, the server marks the linked session as authenticated.
+3. The broker (and any other broker) can now ask the server "who is logged in?" using its token, and the server returns the user — without re-prompting for credentials.
+
+## Installation
+
+```bash
+composer require mi-lopez/laravel-sso
 ```
 
+Publish the config:
 
-Copy config file to Laravel project `config/` folder.
-```shell
-$ php artisan vendor:publish --provider="Zefy\LaravelSSO\SSOServiceProvider"
+```bash
+php artisan vendor:publish --provider="Zefy\LaravelSSO\SSOServiceProvider"
 ```
 
+This creates `config/laravel-sso.php`. Set `type` to either `server` or `broker` depending on the role of the application.
 
-Create table where all brokers will be saved.
-```shell
-$ php artisan migrate --path=vendor/zefy/laravel-sso/database/migrations
-```
+---
 
+## Server Setup
 
-Edit your `app/Http/Kernel.php` by removing throttle middleware and adding sessions middleware to `api` middlewares array.
-This is necessary because we need sessions to work in API routes and throttle middleware can block connections which we need.
+### 1. Mark the app as the server
+
+In `config/laravel-sso.php`:
+
 ```php
-'api' => [
-    'bindings',
-    \Illuminate\Session\Middleware\StartSession::class,
+'type' => 'server',
+```
+
+### 2. Run the migrations
+
+The package ships with two migrations (`brokers` and `broker_user`). Run them:
+
+```bash
+php artisan migrate
+```
+
+### 3. Enable sessions on the SSO API routes
+
+The server endpoints (`/api/sso/*`) need access to sessions. In `bootstrap/app.php`:
+
+```php
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->api(prepend: [
+        \Illuminate\Session\Middleware\StartSession::class,
+    ]);
+})
+```
+
+### 4. Register a broker
+
+For each broker app you plan to run, generate a name and secret:
+
+```bash
+php artisan sso:broker:create my-broker
+```
+
+The command prints the secret. Copy it — the broker app needs it.
+
+### 5. (Optional) Customize fields returned to brokers
+
+`config/laravel-sso.php` lets you choose which user attributes are sent back. Defaults to `id` only:
+
+```php
+'userFields' => [
+    'id'    => 'id',
+    'email' => 'email',
+    'name'  => 'name',
 ],
 ```
 
+---
+
+## Broker Setup
+
+### 1. Mark the app as a broker
+
+In `config/laravel-sso.php`:
+
 ```php
- protected $routeMiddleware = [
-     ...
-     'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-     'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
-     ...
- ];
+'type' => 'broker',
 ```
 
+### 2. Configure the connection to the server
 
-Now you should create brokers.
-You can create new broker using following Artisan CLI command:
-```shell
-$ php artisan sso:broker:create {name}
+In `.env`:
+
+```env
+SSO_SERVER_URL=https://sso.example.com
+SSO_BROKER_NAME=my-broker
+SSO_BROKER_SECRET=<secret-printed-by-sso:broker:create>
 ```
 
-----------
+### 3. Register the auto-login middleware
 
-### Broker
-Install this package using composer.
-```shell
-$ composer require mi-lopez/laravel-sso
-```
+`SSOAutoLogin` must run **before** the `auth` middleware so it can log the user in transparently. Use `prependToPriorityList` in `bootstrap/app.php`:
 
-
-Copy config file to Laravel project `config/` folder.
-```shell
-$ php artisan vendor:publish --provider="Zefy\LaravelSSO\SSOServiceProvider"
-```
-
-
-Change `type` value in `config/laravel-sso.php` file from `server`
- to `broker`.
-
-
-
-Set 3 new options in your `.env` file:
-```shell
-SSO_SERVER_URL=
-SSO_BROKER_NAME=
-SSO_BROKER_SECRET=
-```
-`SSO_SERVER_URL` is your server's http url without trailing slash. `SSO_BROKER_NAME` and `SSO_BROKER_SECRET` must be data which exists in your server's `brokers` table.
-
-
-
-Edit your `app/Http/Kernel.php` by adding `\Zefy\LaravelSSO\Middleware\SSOAutoLogin::class` middleware to `web` middleware group. It should look like this:
 ```php
-protected $middlewareGroups = [
-        'web' => [
-            ...
-            \Zefy\LaravelSSO\Middleware\SSOAutoLogin::class,
-        ],
-
-        'api' => [
-            ...
-        ],
-    ];
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->prependToPriorityList(
+        before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+        prepend: \Zefy\LaravelSSO\Middleware\SSOAutoLogin::class,
+    );
+})
 ```
 
+Then attach the middleware to your protected routes (typically alongside `auth`):
 
-
-Last but not least, you need to edit `app/Http/Controllers/Auth/LoginController.php`. You should add two functions into `LoginController` class which will authenticate your client through SSO server but not your Broker page.
 ```php
-protected function attemptLogin(Request $request)
+use Zefy\LaravelSSO\Middleware\SSOAutoLogin;
+
+Route::middleware([SSOAutoLogin::class, 'auth'])->group(function () {
+    Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+    // ...
+});
+```
+
+> **Why a priority entry?** Laravel's default priority list places `Authenticate` near the end, which means `auth` would otherwise short-circuit a guest with a redirect to `/login` before `SSOAutoLogin` gets a chance to log them in via SSO. Pinning `SSOAutoLogin` before `AuthenticatesRequests` (the contract `auth` implements) fixes the order without copying the whole priority list.
+
+### 4. Forward login and logout to the SSO server
+
+You need to override the login form controller so credentials go through the broker. With **Laravel Breeze**, replace `app/Http/Controllers/Auth/AuthenticatedSessionController.php` with:
+
+```php
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Zefy\LaravelSSO\LaravelSSOBroker;
+
+class AuthenticatedSessionController extends Controller
 {
-    $broker = new \Zefy\LaravelSSO\LaravelSSOBroker;
+    public function create(): View
+    {
+        // Ensure the broker token cookie exists before the user submits the form,
+        // so the POST hits the SSO server with a valid attached session.
+        new LaravelSSOBroker;
 
-    $credentials = $this->credentials($request);
-    return $broker->login($credentials[$this->username()], $credentials['password']);
-}
+        return view('auth.login');
+    }
 
-public function logout(Request $request)
-{
-    $broker = new \Zefy\LaravelSSO\LaravelSSOBroker;
+    public function store(LoginRequest $request): RedirectResponse
+    {
+        $broker = new LaravelSSOBroker;
 
-    $broker->logout();
+        if (! $broker->login($request->input('email'), $request->input('password'))) {
+            return back()->withErrors(['email' => __('auth.failed')])->onlyInput('email');
+        }
 
-    $this->guard()->logout();
+        $userInfo = $broker->getUserInfo();
 
-    $request->session()->invalidate();
+        if (! empty($userInfo['data']['id'])) {
+            auth()->loginUsingId($userInfo['data']['id']);
+        }
 
-    return redirect('/');
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    public function destroy(Request $request): RedirectResponse
+    {
+        (new LaravelSSOBroker)->logout();
+
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
 }
 ```
 
+For other auth scaffolding (Jetstream, Fortify, custom): wherever you handle the login POST, replace the local `Auth::attempt` with `$broker->login(...)` and call `$broker->logout()` on logout.
 
-That's all. For other Broker pages you should repeat everything from the beginning just changing your Broker name and secret in configuration file.
+### 5. (Optional) Mirror users locally
 
+When the broker calls `auth()->loginUsingId($id)`, Laravel looks for the user in the **broker's** database. The simplest setup is to keep the same `users` table on each broker as on the server (same id, same email). If you don't want that, you can:
 
+- Replace the call with a custom resolver that creates/updates a local user from the SSO payload, or
+- Use a custom guard backed by the SSO response.
 
+---
 
-Example `.env` options:
-```shell
-SSO_SERVER_URL=https://server.test
-SSO_BROKER_NAME=site1
-SSO_BROKER_SECRET=892asjdajsdksja74jh38kljk2929023
+## Artisan Commands
+
+| Command                       | Description           |
+|-------------------------------|-----------------------|
+| `sso:broker:create {name}`    | Create a new broker.  |
+| `sso:broker:delete {name}`    | Delete a broker.      |
+| `sso:broker:list`             | List all brokers.     |
+
+---
+
+## Configuration Reference
+
+`config/laravel-sso.php`:
+
+| Key                  | Default                  | Description                                                         |
+|----------------------|--------------------------|---------------------------------------------------------------------|
+| `type`               | `server`                 | `server` or `broker`.                                               |
+| `usersModel`         | `App\Models\User::class` | Eloquent model used by the server to look up users.                 |
+| `brokersModel`       | `Broker::class`          | Eloquent model used by the server to look up brokers.               |
+| `brokersUserModel`   | `BrokerUser::class`      | Pivot model linking users and brokers (optional, for custom flows). |
+| `brokersTable`       | `brokers`                | Table name backing `brokersModel`.                                  |
+| `brokerUserTable`    | `broker_user`            | Table name backing `brokersUserModel`.                              |
+| `userFields`         | `['id' => 'id']`         | Map of payload-key → user-column for fields sent to brokers.        |
+| `serverUrl`          | env `SSO_SERVER_URL`     | (broker) URL of the SSO server.                                     |
+| `brokerName`         | env `SSO_BROKER_NAME`    | (broker) Broker name registered on the server.                      |
+| `brokerSecret`       | env `SSO_BROKER_SECRET`  | (broker) Secret printed by `sso:broker:create`.                     |
+
+---
+
+## Testing
+
+```bash
+composer test
 ```
+
+## Code Style
+
+```bash
+composer lint
+```
+
+---
+
+## License
+
+MIT. See [LICENSE.md](LICENSE.md).

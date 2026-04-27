@@ -5,39 +5,64 @@
     "homepage": "https://github.com/mi-lopez/laravel-sso",
     "license": "MIT",
     "authors": [
-      {
-        "name": "Martynas Žaliaduonis",
-        "email": "m.zaliaduonis@gmail.com",
-        "homepage": "https://github.com/zefy",
-        "role": "Developer"
-      }, {
-          "name": "Kunwar Chandra Pal",
-          "email": "raja.kcpal@gmail.com",
-          "homepage": "https://github.com/kcpal",
-          "role": "Developer"
-      }, {
-          "name": "Miguel López",
-          "email": "miguel.lopezt86@gmail.com",
-          "homepage": "https://github.com/mi-lopez",
-          "role": "Developer"
-      }
+        {
+            "name": "Martynas Žaliaduonis",
+            "email": "m.zaliaduonis@gmail.com",
+            "homepage": "https://github.com/zefy",
+            "role": "Developer"
+        },
+        {
+            "name": "Kunwar Chandra Pal",
+            "email": "raja.kcpal@gmail.com",
+            "homepage": "https://github.com/kcpal",
+            "role": "Developer"
+        },
+        {
+            "name": "Miguel López",
+            "email": "miguel.lopezt86@gmail.com",
+            "homepage": "https://github.com/mi-lopez",
+            "role": "Developer"
+        }
     ],
     "require": {
-        "php": "^7.4",
-        "guzzlehttp/guzzle": "^7.0.1",
-        "laravel/framework": "^8.0",
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "laravel/framework": "^11.0",
         "zefy/php-simple-sso": "^1.0"
     },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "orchestra/testbench": "^9.0"
+    },
     "autoload": {
-      "psr-4": {
-        "Zefy\\LaravelSSO\\": "src/"
-      }
+        "psr-4": {
+            "Zefy\\LaravelSSO\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "lint": "vendor/bin/pint",
+        "lint:fix": "vendor/bin/pint"
     },
     "extra": {
-      "laravel": {
-        "providers": [
-            "Zefy\\LaravelSSO\\SSOServiceProvider"
-        ]
-      }
-    }
+        "laravel": {
+            "providers": [
+                "Zefy\\LaravelSSO\\SSOServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

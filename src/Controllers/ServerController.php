@@ -2,58 +2,38 @@
 
 namespace Zefy\LaravelSSO\Controllers;
 
-use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller as BaseController;
 use Zefy\LaravelSSO\LaravelSSOServer;
+use Zefy\LaravelSSO\Resources\UserResource;
 
 class ServerController extends BaseController
 {
-    /**
-     * @param Request $request
-     * @param LaravelSSOServer $server
-     *
-     * @return void
-     */
-    public function attach(Request $request, LaravelSSOServer $server)
+    public function attach(Request $request, LaravelSSOServer $server): void
     {
         $server->attach(
-            $request->get('broker', null),
-            $request->get('token', null),
-            $request->get('checksum', null)
+            $request->get('broker'),
+            $request->get('token'),
+            $request->get('checksum')
         );
     }
 
-    /**
-     * @param Request $request
-     * @param LaravelSSOServer $server
-     *
-     * @return mixed
-     */
-    public function login(Request $request, LaravelSSOServer $server)
+    public function login(Request $request, LaravelSSOServer $server): JsonResponse|UserResource
     {
         return $server->login(
-            $request->get('username', null),
-            $request->get('password', null)
+            $request->get('username'),
+            $request->get('password')
         );
     }
 
-    /**
-     * @param LaravelSSOServer $server
-     *
-     * @return string
-     */
-    public function logout(LaravelSSOServer $server)
+    public function logout(LaravelSSOServer $server): JsonResponse
     {
         return $server->logout();
     }
 
-    /**
-     * @param LaravelSSOServer $server
-     *
-     * @return string
-     */
-    public function userInfo(LaravelSSOServer $server)
+    public function userInfo(LaravelSSOServer $server): JsonResponse|UserResource
     {
-        return $server->checkUserApplicationAuth();
+        return $server->userInfo();
     }
 }

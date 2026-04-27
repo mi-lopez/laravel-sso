@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\User;
+use Zefy\LaravelSSO\Models\Broker;
+use Zefy\LaravelSSO\Models\BrokerUser;
+
 return [
     /*
      |--------------------------------------------------------------------------
@@ -23,9 +27,9 @@ return [
      |
      */
 
-    'usersModel' => \App\Models\User::class,
-    'brokersModel' => Zefy\LaravelSSO\Models\Broker::class,
-    'brokersUserModel' => Zefy\LaravelSSO\Models\BrokerUser::class,
+    'usersModel' => User::class,
+    'brokersModel' => Broker::class,
+    'brokersUserModel' => BrokerUser::class,
 
     // Table used in Zefy\LaravelSSO\Models\Broker model
     'brokersTable' => 'brokers',
